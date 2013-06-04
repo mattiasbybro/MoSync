@@ -31,7 +31,11 @@ include FileUtils::Verbose
 
 alias :old_sh :sh
 def sh(cmd)
-	old_sh(cmd)
+	old_sh(cmd) do |ok, res|
+		if (!ok)
+			exit 1
+		end
+	end
 	return true
 end
 
@@ -89,9 +93,6 @@ if ($androidNDKPath == '@')
 	$androidVersion = $SETTINGS[:android_version]
 end
 
-# Converts the android version to an Integer
-androidVersionInt = Integer($androidVersion)
-
 if ENV['MOSYNC_SRC'] == nil
 	cd "../../../../"
 	ENV['MOSYNC_SRC'] = pwd
@@ -99,17 +100,6 @@ end
 
 scriptPath = "#{ENV['MOSYNC_SRC']}/runtimes/java/platforms/androidJNI"
 cd scriptPath
-
-#We need two different make files for android due to some restrictions in JNI
-
-puts "Android version is: #{$androidVersion}"
-if(androidVersionInt < 7)
-	ENV['ANDROID_API_BELOW_7'] = "true"
-end
-
-if(androidVersionInt >= 15)
-	ENV['ANDROID_API_15_OR_ABOVE'] = "true"
-end
 
 if $androidNDKPath == nil
 	puts "missing argument, android NDK path is unknown!"
@@ -177,7 +167,7 @@ buildLib("nativeui", { 'src' => "-SNativeUI", 'modules' => "mautil" })
 buildLib("Facebook", { 'src' => "-SFacebook/**", 'modules' => "mautil,yajl" })
 buildLib("Purchase", { 'src' => "-SPurchase", 'modules' => "mautil" })
 buildLib("matest", { 'src' => "-SMATest", 'modules' => "mautil" })
-buildLib("mtxml", { 'src' => "-SMTXml", 'modules' => "mautil" })
+# We don't include this one: buildLib("mtxml", { 'src' => "-SMTXml", 'modules' => "mautil" })
 buildLib("testify", { 'src' => "-STestify/src", 'includes' => "-I#{ENV['MOSYNC_SRC']}/libs/Testify/inc" })
 buildLib("Notification", { 'src' => "-SNotification/**", 'modules' => "mautil" })
 buildLib("Wormhole", { 'src' => "-SWormhole/**", 'modules' => "mautil,mafs,yajl,nativeui,Notification" })

@@ -136,6 +136,7 @@ void packageAndroid(const SETTINGS& s, const RuntimeInfo& ri) {
 	set<string> staticModules;
 	map<string,string> initFuncs;
 
+	bool isDebug = s.debug;
 	bool isNative = !strcmp("native", s.outputType);
 
 	// TODO: beta
@@ -258,8 +259,8 @@ void packageAndroid(const SETTINGS& s, const RuntimeInfo& ri) {
 		for (size_t j = 0; j < modules.size(); j++) {
 			string module = modules[j];
 			bool staticLib = false;
-			string nativeLib = findNativeLibrary(s, modules, module, arch, s.debug, staticLib);
-			bool mustExist = !staticLib;
+			string nativeLib = findNativeLibrary(s, modules, module, arch, isDebug, staticLib);
+			bool mustExist = !staticLib && module != "stlport_shared";
 			if (!nativeLib.empty()) {
 				string dstLibDir = addlib + "/" + arch + "/";
 				_mkdir(dstLibDir.c_str());
@@ -269,6 +270,14 @@ void packageAndroid(const SETTINGS& s, const RuntimeInfo& ri) {
 				printf("Could not find library %s!\n", module.c_str());
 				exit(1);
 			}
+		}
+
+		// Copy the gdbserver thingy
+		if (isDebug) {
+			string variantDirName = string("android_") + arch + (isDebug ? "_debug" : "_release");
+			string gdbServerDst = addlib + "/" + arch + "/gdbserver";
+			string gdbServerSrc = string(s.dst) + "/../" + variantDirName + "/gdbserver";
+			copyFile(gdbServerDst.c_str(), gdbServerSrc.c_str());
 		}
 	}
 
