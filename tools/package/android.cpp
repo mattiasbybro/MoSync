@@ -232,7 +232,7 @@ void packageAndroid(const SETTINGS& s, const RuntimeInfo& ri) {
 
 	cmd.str("");
 	cmd <<getBinary("unzip")<<
-		" -o -q \""<<ri.path<<"MoSyncRuntime"<<(s.debug ? "D" : "")<<".zip\""
+		" -o -q \""<<ri.path<<"MoSyncRuntime"<<(isDebug ? "D" : "")<<".zip\""
 		" -d \""<<classes<<"\"";
 	sh(cmd.str().c_str());
 
@@ -294,11 +294,20 @@ void packageAndroid(const SETTINGS& s, const RuntimeInfo& ri) {
 	// run android/apkbuilder.jar
 	string unsignedUnalignedApk = dstDir + "/" + string(s.name) + "_unsigned_unaligned.apk";
 	cmd.str("");
-	cmd <<"java -jar "<<getBinary("android/apkbuilder.jar")<<
-		" "<<file(unsignedUnalignedApk)<<
+
+	// TODO: This does not work on win; and we should not be using apkbuilder!
+	if (s.androidSdkLocation) {
+		cmd << s.androidSdkLocation << "/tools/apkbuilder";
+	} else {
+		cmd <<"java -jar "<<getBinary("android/apkbuilder.jar");
+	}
+	cmd <<" "<<file(unsignedUnalignedApk)<<
 		" -u -z "<<file(resourcesAp_)<<
 		" -f "<<file(classesDex)<<
 		" -nf "<<file(addlib);
+	if (isDebug && s.androidSdkLocation) {
+		cmd << " -d";
+	}
 	sh(cmd.str().c_str());
 
 	// sign the apk
